@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+
+# Never commit uploaded personal documents or the vector DB built from them
+data/uploads/*
+data/chroma_db/*
+data/metadata/*
+!data/uploads/.gitkeep
+!data/chroma_db/.gitkeep
+!data/metadata/.gitkeep
