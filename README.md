@@ -4,38 +4,6 @@ Turns a scattered pile of certificates, resumes, project reports, and internship
 letters into a searchable, connected, chronological "digital identity" —
 fully local, no API keys, no paid services.
 
-## How it works (architecture)
-
-```
-                     ┌─────────────────────┐
-  Upload file  ───▶  │  1. Ingestion        │  pypdf / python-docx / OCR
-  (pdf/docx/img)     │     (extract text)   │
-                     └──────────┬──────────┘
-                                ▼
-                     ┌─────────────────────┐
-                     │  2. Local LLM        │  Ollama (qwen2.5:1.5b)
-                     │     extraction       │  → category, skills, dates,
-                     │     (structured JSON)│    entities, related_to
-                     └──────────┬──────────┘
-                                ▼
-                ┌───────────────┴────────────────┐
-                ▼                                ▼
-     ┌─────────────────────┐          ┌─────────────────────┐
-     │ 3. Embeddings +      │          │ 4. Relationship graph│
-     │    ChromaDB (vector  │          │    (NetworkX, built  │
-     │    store, semantic   │          │    from related_to   │
-     │    search)            │          │    + shared skills)  │
-     └──────────┬──────────┘          └──────────┬──────────┘
-                ▼                                ▼
-     ┌─────────────────────────────────────────────────┐
-     │      5. Streamlit UI                             │
-     │   - Upload                                        │
-     │   - "Show my AI projects" (semantic search)       │
-     │   - Timeline view (sorted by extracted date)      │
-     │   - Interactive relationship graph (pyvis)        │
-     │   - Original file always downloadable             │
-     └─────────────────────────────────────────────────┘
-```
 
 Every module in the hackathon brief maps to one piece here:
 - **Module 1 (Ingestion)** → `ingestion.py`
@@ -137,6 +105,8 @@ memoryverse/
 │   └── metadata/          # per-document extracted JSON (auto-created)
 └── README.md
 ```
+
+## How it works (architecture)
 
 <img width="1200" height="1080" alt="architecture_diagram" src="https://github.com/user-attachments/assets/fd249cc7-eed9-47fe-b926-9cfc5d31b904" />
 
