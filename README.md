@@ -1,0 +1,152 @@
+# MemoryVerse — AI-Powered Digital Identity System
+
+Turns a scattered pile of certificates, resumes, project reports, and internship
+letters into a searchable, connected, chronological "digital identity" —
+fully local, no API keys, no paid services.
+
+## How it works (architecture)
+
+```
+                     ┌─────────────────────┐
+  Upload file  ───▶  │  1. Ingestion        │  pypdf / python-docx / OCR
+  (pdf/docx/img)     │     (extract text)   │
+                     └──────────┬──────────┘
+                                ▼
+                     ┌─────────────────────┐
+                     │  2. Local LLM        │  Ollama (qwen2.5:1.5b)
+                     │     extraction       │  → category, skills, dates,
+                     │     (structured JSON)│    entities, related_to
+                     └──────────┬──────────┘
+                                ▼
+                ┌───────────────┴────────────────┐
+                ▼                                ▼
+     ┌─────────────────────┐          ┌─────────────────────┐
+     │ 3. Embeddings +      │          │ 4. Relationship graph│
+     │    ChromaDB (vector  │          │    (NetworkX, built  │
+     │    store, semantic   │          │    from related_to   │
+     │    search)            │          │    + shared skills)  │
+     └──────────┬──────────┘          └──────────┬──────────┘
+                ▼                                ▼
+     ┌─────────────────────────────────────────────────┐
+     │      5. Streamlit UI                             │
+     │   - Upload                                        │
+     │   - "Show my AI projects" (semantic search)       │
+     │   - Timeline view (sorted by extracted date)      │
+     │   - Interactive relationship graph (pyvis)        │
+     │   - Original file always downloadable             │
+     └─────────────────────────────────────────────────┘
+```
+
+Every module in the hackathon brief maps to one piece here:
+- **Module 1 (Ingestion)** → `ingestion.py`
+- **Module 2 (Categorization)** → the LLM extraction step (`extraction.py`)
+- **Module 3 (Relationship Engine)** → `graph_utils.py` (built from the LLM's
+  `related_to` output + shared-skill edges)
+- **Module 4 (Timeline)** → sort-by-date in `app.py`
+- **Module 5 (Smart Retrieval)** → `vectorstore.py` semantic search + original
+  file always kept in `data/uploads/`
+
+## Setup
+
+### 1. Install Ollama (the local LLM runtime)
+
+**Windows / Mac:**
+Download and run the installer from https://ollama.com/download
+
+**Linux:**
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+Verify it's installed:
+```bash
+ollama --version
+```
+
+### 2. Pull the model (one-time, ~1GB download)
+
+```bash
+ollama pull qwen2.5:1.5b
+```
+
+This model was picked because it's small enough to run comfortably on 8GB RAM
+machines while still being solid at structured JSON extraction. If your
+machine has more headroom later, `llama3.2:3b` gives noticeably better
+extraction quality — just `ollama pull llama3.2:3b` and change `MODEL_NAME`
+in `extraction.py`.
+
+### 3. Start Ollama (it usually auto-starts as a background service; if not:)
+
+```bash
+ollama serve
+```
+
+Leave this running in a terminal. It serves the local API at
+`http://localhost:11434`.
+
+### 4. Install Python dependencies
+
+```bash
+cd memoryverse
+python -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+**OCR note**: for scanned certificate images, `pytesseract` needs the
+Tesseract binary installed separately:
+- Mac: `brew install tesseract`
+- Linux: `sudo apt-get install tesseract-ocr`
+- Windows: installer at https://github.com/UB-Mannheim/tesseract/wiki
+
+If you skip this, everything still works for PDFs/docx — just scanned image
+certs won't OCR.
+
+### 5. Run the app
+
+```bash
+streamlit run app.py
+```
+
+Opens at `http://localhost:8501`.
+
+## Demo flow (for judges)
+
+1. Upload 5-10 sample files (a resume, a certificate PDF, a project report,
+   an internship letter) — watch each get auto-categorized live.
+2. Type a natural query: "show my AI projects" or "show my certificates" —
+   instant semantic retrieval, original file downloadable.
+3. Open the Timeline tab — chronological growth story.
+4. Open the Graph tab — visually click through
+   Certification → Skill → Project → Internship links.
+5. Land the line: **"I never have to search through folders again."**
+
+## Project structure
+
+```
+memoryverse/
+├── app.py                # Streamlit UI (entry point)
+├── ingestion.py           # File parsing (pdf/docx/image OCR)
+├── extraction.py          # Ollama call: categorize + extract entities
+├── vectorstore.py         # ChromaDB wrapper: embed, store, semantic search
+├── graph_utils.py         # NetworkX relationship graph + pyvis rendering
+├── requirements.txt
+├── data/
+│   ├── uploads/           # original files, always preserved
+│   ├── chroma_db/         # vector store (auto-created)
+│   └── metadata/          # per-document extracted JSON (auto-created)
+└── README.md
+```
+
+## Why this satisfies the evaluation criteria
+
+- **AI organization/categorization/retrieval (40%)**: local LLM does
+  structured categorization + entity extraction; ChromaDB does true semantic
+  search (not keyword matching) for retrieval.
+- **AI/ML technique use (25%)**: embeddings, vector database, semantic
+  search, and knowledge-graph construction — all four bullet points from
+  "what reviewers might look for."
+- **Innovation/UX (20%)**: fully offline/local — no API cost, works without
+  internet, privacy-preserving for personal documents (a real differentiator
+  for a system holding someone's certificates and resumes).
+- **Clarity (15%)**: this README + the architecture diagram above.
