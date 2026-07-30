@@ -60,6 +60,57 @@ def extract_metadata(document_text: str, max_chars: int = 4000) -> dict:
     return _parse_json_safely(raw_output)
 
 
+SYNTHESIS_PROMPT_TEMPLATE = """You are helping a student understand their own academic/professional journey
+based on documents they've uploaded (certificates, resumes, project reports, internship letters).
+
+Answer the question below using ONLY the context documents provided. Write 2-4 sentences,
+in a natural, direct tone — like a knowledgeable friend summarizing their journey, not a
+generic AI assistant. Be specific: mention actual skills, project names, dates, and
+organizations from the context. Do not invent anything not present in the context.
+If the context doesn't contain enough information to answer, say so plainly.
+
+Question: {question}
+
+Context documents:
+{context}
+
+Answer:"""
+
+
+def synthesize_answer(question: str, context_docs: list) -> str:
+    """
+    The 'Ask Your Journey' feature: instead of just returning matching documents,
+    this synthesizes a direct answer to a question about the person, grounded in
+    their actual uploaded documents. context_docs is a list of dicts with at least
+    'title', 'category', 'date', 'summary', 'skills' keys (from vectorstore.search results).
+    """
+    context_parts = []
+    for i, doc in enumerate(context_docs, 1):
+        meta = doc.get("metadata", doc)  # accept either raw metadata or a search-result dict
+        context_parts.append(
+            f"[Document {i}] {meta.get('title', 'Untitled')} "
+            f"({meta.get('category', 'Unknown')}, {meta.get('date') or 'no date'})\n"
+            f"Skills: {meta.get('skills', '')}\n"
+            f"Summary: {meta.get('summary', '')}"
+        )
+    context = "\n\n".join(context_parts) if context_parts else "No documents available."
+
+    prompt = SYNTHESIS_PROMPT_TEMPLATE.format(question=question, context=context)
+
+    response = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL_NAME,
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": 0.3},
+        },
+        timeout=120,
+    )
+    response.raise_for_status()
+    return response.json().get("response", "").strip()
+
+
 def _parse_json_safely(raw_output: str) -> dict:
     """Local models sometimes wrap JSON in markdown fences or add stray text —
     strip that before parsing, and fall back to a safe default on failure."""
