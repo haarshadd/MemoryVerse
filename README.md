@@ -119,7 +119,7 @@ Opens at `http://localhost:8501`.
 3. Open the Timeline tab — chronological growth story.
 4. Open the Graph tab — visually click through
    Certification → Skill → Project → Internship links.
-5. Land the line: **"I never have to search through folders again."**
+
 
 ## Project structure
 
@@ -138,15 +138,4 @@ memoryverse/
 └── README.md
 ```
 
-## Why this satisfies the evaluation criteria
 
-- **AI organization/categorization/retrieval (40%)**: local LLM does
-  structured categorization + entity extraction; ChromaDB does true semantic
-  search (not keyword matching) for retrieval.
-- **AI/ML technique use (25%)**: embeddings, vector database, semantic
-  search, and knowledge-graph construction — all four bullet points from
-  "what reviewers might look for."
-- **Innovation/UX (20%)**: fully offline/local — no API cost, works without
-  internet, privacy-preserving for personal documents (a real differentiator
-  for a system holding someone's certificates and resumes).
-- **Clarity (15%)**: this README + the architecture diagram above.
