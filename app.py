@@ -1,7 +1,3 @@
-"""
-MemoryVerse — AI-Powered Digital Identity System
-Streamlit entry point. Run with: streamlit run app.py
-"""
 import os
 import uuid
 import json
