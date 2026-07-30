@@ -1,10 +1,14 @@
+"""
+MemoryVerse — AI-Powered Digital Identity System
+Streamlit entry point. Run with: streamlit run app.py
+"""
 import os
 import uuid
 import json
 import streamlit as st
 
 from ingestion import extract_text
-from extraction import extract_metadata, CATEGORIES
+from extraction import extract_metadata, synthesize_answer, CATEGORIES
 from vectorstore import add_document, search, get_all_documents
 from graph_utils import build_graph, render_pyvis
 
@@ -15,10 +19,10 @@ os.makedirs(METADATA_DIR, exist_ok=True)
 
 st.set_page_config(page_title="MemoryVerse", page_icon="🧠", layout="wide")
 st.title("🧠 MemoryVerse — Your Digital Identity")
-st.caption("Upload once. Never search through folders again.")
+st.caption("Upload once. Never search through folders again — just ask.")
 
-tab_upload, tab_search, tab_timeline, tab_graph = st.tabs(
-    ["📤 Upload", "🔍 Smart Search", "📅 Timeline", "🕸️ Relationship Graph"]
+tab_upload, tab_search, tab_ask, tab_timeline, tab_graph = st.tabs(
+    ["📤 Upload", "🔍 Smart Search", "💬 Ask Your Journey", "📅 Timeline", "🕸️ Relationship Graph"]
 )
 
 # ---------------------------------------------------------------------------
@@ -113,6 +117,51 @@ with tab_search:
                             file_name=os.path.basename(meta["file_path"]),
                             key=r["id"],
                         )
+
+# ---------------------------------------------------------------------------
+# TAB 2.5: Ask Your Journey — synthesizes an answer, doesn't just return files
+# ---------------------------------------------------------------------------
+with tab_ask:
+    st.subheader("Ask a question about yourself")
+    st.caption('Try: "what am I good at?" · "tell my story in one paragraph" · "am I ready for an ML internship?"')
+
+    with st.form("ask_form"):
+        question = st.text_input("Question", placeholder="What am I good at?")
+        ask_submitted = st.form_submit_button("Ask")
+
+    if ask_submitted and question:
+        all_docs = get_all_documents()
+        if not all_docs:
+            st.info("Upload some documents first — there's nothing to draw on yet.")
+        else:
+            with st.spinner("Thinking through your documents..."):
+                # Retrieve the most relevant documents as context, then synthesize.
+                results = search(question, n_results=6)
+                try:
+                    answer = synthesize_answer(question, results)
+                except Exception as e:
+                    st.error(
+                        f"Could not reach local Ollama model: {e}\n\n"
+                        "Make sure `ollama serve` is running (see README)."
+                    )
+                    answer = None
+
+            if answer:
+                st.markdown(f"### {answer}")
+                st.divider()
+                st.caption("Grounded in these documents:")
+                for r in results:
+                    meta = r["metadata"]
+                    with st.container(border=True):
+                        st.write(f"**{meta.get('title')}**  ·  {meta.get('category')}  ·  {meta.get('date') or 'no date'}")
+                        if meta.get("file_path") and os.path.exists(meta["file_path"]):
+                            with open(meta["file_path"], "rb") as f:
+                                st.download_button(
+                                    "⬇ Download original file",
+                                    f.read(),
+                                    file_name=os.path.basename(meta["file_path"]),
+                                    key=f"ask_{r['id']}",
+                                )
 
 # ---------------------------------------------------------------------------
 # TAB 3: Timeline (Module 4)
