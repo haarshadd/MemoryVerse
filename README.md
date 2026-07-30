@@ -138,4 +138,5 @@ memoryverse/
 └── README.md
 ```
 
+<img width="1200" height="1080" alt="architecture_diagram" src="https://github.com/user-attachments/assets/fd249cc7-eed9-47fe-b926-9cfc5d31b904" />
 
