@@ -8,7 +8,7 @@ That reframing is what shaped every decision below.
 
 ## Decision 1: local-only, and why that's not just a budget constraint
 
-We built this with zero paid APIs — Ollama running a small model locally, ChromaDB for vectors, everything on-device. That started as a practical constraint (no API keys), but it turned into the right call for the problem itself.
+I built this with zero paid APIs — Ollama running a small model locally, ChromaDB for vectors, everything on-device. That started as a practical constraint (no API keys), but it turned into the right call for the problem itself.
 
 Think about what's actually being uploaded here: certificates with full names, internship letters with company details, resumes with contact information. This is exactly the kind of personal document trail that shouldn't need to leave a laptop to be understood. A "digital identity system" that ships your identity documents to a third-party API to categorize them is a strange thing to build a hackathon prize around. Local-first isn't a workaround — it's the more honest architecture for what this system actually holds.
 
@@ -22,9 +22,9 @@ This is the actual center of the project. Early on, "smart retrieval" meant: typ
 
 Once every document has been embedded and tagged with skills, dates, and categories, the system has enough structure to do something a folder never could: **answer a question about the person, not just return documents that match it.** Ask "what am I good at?" and instead of a list of five files, the system retrieves the relevant documents, feeds them to the local model as context, and returns a synthesized answer — a sentence or two, grounded in what was actually uploaded, with each claim traceable back to its source file.
 
-This is the feature we'd want a judge to remember. It's the difference between a system that stores a journey and one that can actually talk about it.
+This is the feature we'd want you to remember. It's the difference between a system that stores a journey and one that can actually talk about it.
 
-## What we chose not to build, and why
+## What I chose not to build, and why
 
 - **No cloud vector DB, no hosted LLM** — see Decision 1.
 - **No custom graph database** — a full graph DB is real infrastructure for a demo that needs to run on a laptop in a few minutes. NetworkX in memory, rebuilt from the extracted metadata each time, does the same conceptual job (Certification → Skill → Project → Internship) without the operational weight.
